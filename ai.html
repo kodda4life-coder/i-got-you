@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI</title>
+<link rel="stylesheet" href="shared.css">
+<script src="theme.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  height:100%;
+  overflow:hidden;
+  font-family:'Segoe UI',system-ui,sans-serif;
+  color:var(--t1);
+  font-size:13px;
+  margin:0;
+  padding:0;
+  background: transparent !important;
+}
+body {
+  min-height: 100vh;
+  background: rgba(0, 0, 0, 0.15) !important;
+  backdrop-filter: blur(12px) saturate(1.6) !important;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-chat-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── LOADING SCREEN ── */
+#load-screen{
+  position:fixed;inset:0;
+  background-color:var(--bg3);
+  z-index:999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#load-screen.gone{display:none;}
+.ls{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;padding:32px;max-width:320px;}
+.ls-ring{position:relative;width:64px;height:64px;}
+.ls-ring svg{width:64px;height:64px;}
+.ls-ring-track{stroke:var(--bdr2);stroke-width:5;fill:none;}
+.ls-ring-fill{stroke:url(#ringGrad);stroke-width:5;fill:none;stroke-linecap:round;stroke-dasharray:160;stroke-dashoffset:160;transition:stroke-dashoffset .4s ease;}
+.ls-ring-ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.ls-title{font-size:19px;font-weight:700;letter-spacing:-.3px;color:var(--t1);}
+.ls-status{font-size:12px;color:var(--t3);line-height:1.6;min-height:18px;}
+.ls-bar-wrap{width:220px;height:3px;background:var(--bdr2);border-radius:4px;overflow:hidden;}
+.ls-bar{height:3px;background:linear-gradient(90deg,var(--accent),#a855f7);border-radius:4px;width:0%;transition:width .4s ease;}
+.ls-pct{font-size:24px;font-weight:700;color:var(--accent);letter-spacing:-.5px;}
+.ls-fact{font-size:11px;color:var(--t3);max-width:240px;line-height:1.65;min-height:34px;}
+.ls-note{font-size:10px;color:var(--t3);margin-top:2px;}
+
+/* ── Dashboard Search Bar ── */
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 40px;
+  padding: 8px 20px;
+  max-width: 340px;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+.search-wrapper:focus-within {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.search-wrapper i { color: rgba(255, 255, 255, 0.5); font-size: 16px; margin-right: 12px; }
+.search-wrapper input {
+  flex: 1; background: none; border: none; outline: none; color: #fff;
+  font-size: 14px; font-family: inherit; height: 32px;
+}
+.search-wrapper input::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+/* ── Tags / Suggestion Chips ── */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.sug {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 30px;
+  padding: 6px 16px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.sug:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* ── Divider & Header ── */
+.section-divider { width: 100%; height: 1px; background: rgba(255, 255, 255, 0.08); margin-bottom: 16px; }
+.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.section-header i { color: #fff; font-size: 20px; }
+.section-header h2 { font-size: 22px; font-weight: 600; color: #fff; letter-spacing: -0.3px; }
+
+/* ── MESSAGES ── */
+.msgs{flex:1;overflow-y:auto;padding:0 0 16px 0;display:flex;flex-direction:column;gap:12px;}
+.msgs::-webkit-scrollbar{width:4px;}
+.msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:2px;}
+.welcome{margin:auto;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:40px 20px;}
+.w-ico{width:60px;height:60px;border-radius:18px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.w-title{font-size:20px;font-weight:700;letter-spacing:-.5px;color:var(--t1);}
+.w-sub{font-size:13px;color:var(--t3);max-width:280px;line-height:1.6;}
+
+/* ── ROWS (smaller bubbles) ── */
+.row{display:flex;gap:10px;align-items:flex-start;animation:fu .18s ease;}
+@keyframes fu{from{opacity:0;transform:translateY(5px);}to{opacity:1;}}
+.row.user{align-self:flex-end;flex-direction:row-reverse;max-width:70%;}
+.row.ai{max-width:75%;}
+.r-ico{width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.row.ai .r-ico{background:var(--accent);}
+.row.user .r-ico{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.08);}
+.bub{padding:6px 10px;border-radius:14px;font-size:12px;line-height:1.5;word-break:break-word;}
+.row.ai .bub{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.06);border-top-left-radius:4px;color:var(--t1);}
+.row.user .bub{background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.1);color:var(--t1);border-top-right-radius:4px;display:flex;flex-direction:column;gap:6px;}
+.row.user .bub img{max-width:180px;max-height:160px;border-radius:8px;display:block;object-fit:contain;align-self:flex-start;margin-bottom:4px;border:1px solid rgba(255,255,255,.2);}
+.row.user .bub .user-text{background:transparent;color:var(--t1);padding:0;margin:0;font-size:12px;line-height:1.5;}
+.row.ai .bub img{max-width:100%;border-radius:8px;margin:6px 0;}
+.bub pre{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:8px 10px;margin:6px 0;overflow-x:auto;font-family:Consolas,monospace;font-size:11px;white-space:pre-wrap;}
+.bub code{background:rgba(255,255,255,.07);padding:1px 4px;border-radius:4px;font-family:Consolas,monospace;font-size:11px;color:var(--t1);}
+
+/* ── TYPING ── */
+.typing{display:flex;gap:4px;align-items:center;padding:2px 0;}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--t3);animation:bop .9s infinite;}
+.typing span:nth-child(2){animation-delay:.18s;}
+.typing span:nth-child(3){animation-delay:.36s;}
+@keyframes bop{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-4px);}}
+
+/* ── INPUT ── */
+.input-area{padding:12px 0 0 0;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;}
+.input-area.drag-over{background:rgba(124,58,237,.1);}
+.img-preview-wrap{display:flex;gap:10px;flex-wrap:wrap;padding:0 0 12px 0;}
+.img-preview{position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid var(--bdr2);background:var(--bg3);transition:transform .1s ease;}
+.img-preview:hover{transform:scale(1.02);}
+.img-preview img{width:100%;height:100%;object-fit:cover;}
+.img-preview-x{position:absolute;top:3px;right:3px;width:18px;height:18px;background:rgba(0,0,0,.75);border-radius:50%;border:none;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .12s;}
+.img-preview-x:hover{background:#ff5f57;}
+.input-box{display:flex;gap:12px;align-items:flex-end;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:8px 12px;transition:border-color .2s, box-shadow .2s;}
+.input-box:focus-within{border-color:rgba(124,58,237,.6);box-shadow:0 0 0 2px rgba(124,58,237,.2);}
+textarea{flex:1;background:none;border:none;outline:none;color:var(--t1);font-size:13px;font-family:inherit;resize:none;line-height:1.5;max-height:120px;min-height:36px;padding:6px 0;}
+textarea::placeholder{color:var(--t3);font-weight:400;letter-spacing:-0.2px;}
+.send{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#a855f7);border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .1s, opacity .2s;}
+.send:hover{opacity:.9;transform:scale(1.02);}
+.send:disabled{opacity:.3;transform:none;cursor:default;}
+.upload-btn{width:34px;height:34px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;color:var(--t3);}
+.upload-btn:hover{background:rgba(255,255,255,.12);color:var(--accent);border-color:var(--accent);transform:scale(1.02);}
+.hint{font-size:10px;color:var(--t3);text-align:center;margin-top:10px;letter-spacing:.3px;}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="load-screen">
+  <div class="ls">
+    <div class="ls-ring">
+      <svg viewBox="0 0 64 64">
+        <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="var(--accent)"/><stop offset="100%" stop-color="#a855f7"/></linearGradient></defs>
+        <circle class="ls-ring-track" cx="32" cy="32" r="27"/>
+        <circle class="ls-ring-fill" id="ring-fill" cx="32" cy="32" r="27" transform="rotate(-90 32 32)"/>
+      </svg>
+      <div class="ls-ring-ico"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="4" fill="url(#gs)"/><line x1="16" y1="12" x2="16" y2="6" stroke="#a78bfa" stroke-width="1.5"/><line x1="16" y1="20" x2="16" y2="26" stroke="#a78bfa" stroke-width="1.5"/><line x1="12" y1="16" x2="6" y2="16" stroke="#a78bfa" stroke-width="1.5"/><line x1="20" y1="16" x2="26" y2="16" stroke="#a78bfa" stroke-width="1.5"/></svg></div>
+    </div>
+    <div class="ls-title">Loading AI</div>
+    <div class="ls-pct" id="ls-pct">0%</div>
+    <div class="ls-bar-wrap"><div class="ls-bar" id="ls-bar"></div></div>
+    <div class="ls-status" id="ls-status">Initialising...</div>
+    <div class="ls-fact" id="ls-fact">100% local · No data leaves your device</div>
+    <div class="ls-note">Requires Chrome 113+ with WebGPU</div>
+    <button onclick="skipLoad()" style="margin-top:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);color:var(--t2);padding:7px 16px;border-radius:20px;cursor:pointer;">Skip loading</button>
+  </div>
+</div>
+
+<!-- CHAT DASHBOARD -->
+<div class="dashboard-chat-wrap">
+  <div class="search-wrapper">
+    <i class="fas fa-search"></i>
+    <input type="text" placeholder="Ask something..." onkeydown="if(event.key==='Enter'){ document.getElementById('ta').value=this.value; window.sendMsg && window.sendMsg(); this.value=''; }" autocomplete="off" />
+  </div>
+
+  <div class="tags-container">
+    <button class="sug" onclick="useSug(this)">Write code</button>
+    <button class="sug" onclick="useSug(this)">Help with math</button>
+    <button class="sug" onclick="useSug(this)">Write a story</button>
+    <button class="sug" onclick="useSug(this)">Explain a concept</button>
+    <button class="sug" onclick="useSug(this)">Analyze an image</button>
+  </div>
+
+  <div class="section-divider"></div>
+  <div class="section-header">
+    <i class="fas fa-robot"></i>
+    <h2>AI Assistant</h2>
+  </div>
+
+  <div class="msgs" id="msgs">
+    <div class="welcome" id="welcome">
+      <div class="w-ico">
+        <svg viewBox="0 0 32 32" fill="none" width="32" height="32">
+          <defs><linearGradient id="gs" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#c4b5fd"/><stop offset="100%" stop-color="var(--accent)"/></linearGradient></defs>
+          <circle cx="16" cy="16" r="4" fill="url(#gs)"/>
+          <line x1="16" y1="12" x2="16" y2="6" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="16" y1="20" x2="16" y2="26" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="12" y1="16" x2="6" y2="16" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="20" y1="16" x2="26" y2="16" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="16" cy="6" r="1.5" fill="#c4b5fd"/>
+          <circle cx="16" cy="26" r="1.5" fill="#c4b5fd"/>
+          <circle cx="6" cy="16" r="1.5" fill="#c4b5fd"/>
+          <circle cx="26" cy="16" r="1.5" fill="#c4b5fd"/>
+        </svg>
+      </div>
+      <div class="w-title">Hi, I'm your AI</div>
+      <div class="w-sub">Ask me anything — code, images, essays, math, science, creative writing, and more.</div>
+    </div>
+  </div>
+
+  <div class="input-area" id="input-area">
+    <div class="img-preview-wrap" id="img-preview-wrap"></div>
+    <input type="file" id="img-input" accept="image/*" multiple style="display:none">
+    <div class="input-box">
+      <button class="upload-btn" id="upload-btn" title="Attach image">📎</button>
+      <textarea id="ta" placeholder="Ask me anything... (drag & drop or paste images)" rows="1" onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+      <button class="send" id="send" onclick="window.sendMsg && window.sendMsg()">➤</button>
+    </div>
+    <div class="hint">📎 Click, drag & drop, or paste images · Images appear above your text</div>
+  </div>
+</div>
+
+<script>
+function skipLoad(){
+  document.getElementById('load-screen').classList.add('gone');
+  var ta = document.getElementById('ta');
+  if(ta) ta.focus();
+}
+function resize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function onKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); window.sendMsg && window.sendMsg();} }
+function useSug(btn){ document.getElementById('ta').value=btn.textContent; window.sendMsg && window.sendMsg(); }
+</script>
+<script type="module">
+import * as webllm from 'https://esm.run/@mlc-ai/web-llm';
+
+var engine = null;
+var busy = false;
+var convo = [];
+
+function setProgress(pct, statusText){
+  document.getElementById('ls-bar').style.width = pct + '%';
+  document.getElementById('ls-pct').textContent = pct + '%';
+  var circ = 2 * Math.PI * 27;
+  var offset = circ - (pct / 100) * circ;
+  let ring = document.getElementById('ring-fill');
+  if(ring) ring.style.strokeDashoffset = offset;
+  document.getElementById('ls-status').textContent = (statusText || '').slice(0, 48);
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function scroll(){ var m=document.getElementById('msgs'); m.scrollTop=m.scrollHeight; }
+
+function fmt(t){
+  t=t.replace(/```[\w]*\n?([\s\S]*?)```/g,function(_,c){return '<pre>'+esc(c.trim())+'</pre>';});
+  t=t.replace(/`([^`\n]+)`/g,function(_,c){return '<code>'+esc(c)+'</code>';});
+  t=t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/\n/g,'<br>');
+  return t;
+}
+
+const LOGO_SVG = `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><defs><linearGradient id="gs" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#c4b5fd"/><stop offset="100%" stop-color="var(--accent)"/></linearGradient></defs><circle cx="16" cy="16" r="4" fill="url(#gs)"/><line x1="16" y1="12" x2="16" y2="6" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="20" x2="16" y2="26" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="16" x2="6" y2="16" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><line x1="20" y1="16" x2="26" y2="16" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+
+function addRow(role,content,isHtml){
+  var w=document.getElementById('welcome');if(w)w.remove();
+  var msgs=document.getElementById('msgs');
+  var row=document.createElement('div');row.className='row '+role;
+  var ico=document.createElement('div');ico.className='r-ico';
+  ico.innerHTML = LOGO_SVG;
+  var bub=document.createElement('div');bub.className='bub';
+  if(isHtml)bub.innerHTML=content;else bub.textContent=content;
+  row.appendChild(ico);row.appendChild(bub);msgs.appendChild(row);scroll();
+  return bub;
+}
+
+function addTyping(){
+  var w=document.getElementById('welcome');if(w)w.remove();
+  var msgs=document.getElementById('msgs');
+  var row=document.createElement('div');row.className='row ai';row.id='typing-row';
+  var ico=document.createElement('div');ico.className='r-ico';ico.innerHTML = LOGO_SVG;
+  var bub=document.createElement('div');bub.className='bub';
+  bub.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  row.appendChild(ico);row.appendChild(bub);msgs.appendChild(row);scroll();
+}
+function removeTyping(){var t=document.getElementById('typing-row');if(t)t.remove();}
+function showError(msg){
+  var msgs=document.getElementById('msgs');
+  var d=document.createElement('div');
+  d.style.cssText='background:rgba(255,95,87,.08);border:1px solid rgba(255,95,87,.2);color:#ff5f57;padding:10px 14px;border-radius:10px;font-size:12px;';
+  d.textContent='Error: '+msg;msgs.appendChild(d);scroll();
+}
+
+async function loadModel(){
+  try{
+    setProgress(0,'Starting...');
+    engine=await webllm.CreateMLCEngine('Llama-3.2-1B-Instruct-q4f16_1-MLC',{
+      initProgressCallback:function(report){
+        var pct=Math.round((report.progress||0)*100);
+        setProgress(pct, report.text||'');
+      }
+    });
+    setProgress(100,'Ready!');
+    await new Promise(r=>setTimeout(r,600));
+    document.getElementById('load-screen').classList.add('gone');
+    document.getElementById('ta').focus();
+  } catch(e){
+    document.getElementById('load-screen').innerHTML='<div style="text-align:center;padding:32px;"><div style="font-size:40px;">😔</div><div>WebGPU not supported. Use Chrome 113+.</div></div>';
+  }
+}
+
+// ── IMAGE UPLOAD ──
+var pendingImgs = [];
+const MAX_FILE_SIZE_MB = 5;
+
+function addImage(file){
+  if(!file.type.startsWith('image/')){ showError('Only images allowed.'); return; }
+  if(file.size > MAX_FILE_SIZE_MB*1024*1024){ showError(`Image >${MAX_FILE_SIZE_MB}MB`); return; }
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    var dataUrl = ev.target.result;
+    var b64 = dataUrl.split(',')[1];
+    pendingImgs.push({dataUrl, base64:b64, mediaType:file.type});
+    renderPreviews();
+  };
+  reader.readAsDataURL(file);
+}
+
+function onImgSelect(e){
+  var files = Array.from(e.target.files);
+  e.target.value = '';
+  files.forEach(addImage);
+}
+
+function renderPreviews(){
+  var wrap = document.getElementById('img-preview-wrap');
+  wrap.innerHTML = '';
+  pendingImgs.forEach(function(img, i){
+    var div = document.createElement('div'); div.className = 'img-preview';
+    var imgEl = document.createElement('img'); imgEl.src = img.dataUrl;
+    var btn = document.createElement('button'); btn.className = 'img-preview-x'; btn.textContent = '✕';
+    btn.onclick = function(){ pendingImgs.splice(i,1); renderPreviews(); };
+    div.appendChild(imgEl); div.appendChild(btn); wrap.appendChild(div);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  let fileInput = document.getElementById('img-input');
+  let uploadBtn = document.getElementById('upload-btn');
+  if(uploadBtn) uploadBtn.onclick = ()=>fileInput.click();
+  if(fileInput) fileInput.onchange = onImgSelect;
+  
+  let area = document.getElementById('input-area');
+  area.ondragover = e=>{ e.preventDefault(); area.classList.add('drag-over'); };
+  area.ondragleave = ()=> area.classList.remove('drag-over');
+  area.ondrop = e=>{
+    e.preventDefault(); area.classList.remove('drag-over');
+    let files = Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
+    files.forEach(addImage);
+  };
+  document.addEventListener('paste', e=>{
+    let items = (e.clipboardData||e.originalEvent.clipboardData).items;
+    for(let i=0;i<items.length;i++) if(items[i].type.indexOf('image')!==-1) addImage(items[i].getAsFile());
+  });
+});
+
+function addUserMessageWithImages(text, images){
+  var w=document.getElementById('welcome');if(w)w.remove();
+  var msgsEl=document.getElementById('msgs');
+  var row=document.createElement('div');row.className='row user';
+  var ico=document.createElement('div');ico.className='r-ico';ico.innerHTML = LOGO_SVG;
+  var bub=document.createElement('div');bub.className='bub';
+  images.forEach(img=>{
+    let el=document.createElement('img');
+    el.style.cssText='max-width:180px;max-height:160px;border-radius:10px;margin:0 0 4px 0;object-fit:contain;border:1px solid rgba(255,255,255,.2);';
+    el.src=img.dataUrl; bub.appendChild(el);
+  });
+  if(text){
+    let tDiv=document.createElement('div'); tDiv.className='user-text';
+    tDiv.style.cssText='background:transparent;color:var(--t1);padding:0;margin:0;font-size:12px;line-height:1.5;';
+    tDiv.textContent=text; bub.appendChild(tDiv);
+  }
+  row.appendChild(ico); row.appendChild(bub); msgsEl.appendChild(row); scroll();
+}
+
+// ── FULLY PERMISSIVE AI (NO RESTRICTIONS) ──
+async function sendMsg(){
+  if(busy) return;
+  let ta = document.getElementById('ta');
+  let txt = ta.value.trim();
+  let imgs = pendingImgs.slice();
+  if(!txt && imgs.length===0) return;
+  ta.value = ''; ta.style.height = 'auto';
+  pendingImgs = []; renderPreviews();
+  document.getElementById('send').disabled = true; busy = true;
+
+  addUserMessageWithImages(txt, imgs);
+  convo.push({role:'user', content: txt || (imgs.length ? "Sent image(s)" : "")});
+  addTyping();
+
+  try{
+    if(imgs.length){
+      removeTyping();
+      let reply = "📸 Thanks for the image. I can help with text questions or you can describe what you'd like to know about the image.";
+      addRow('ai', fmt(reply), true);
+      convo.push({role:'assistant', content:reply});
+    }
+    else if(engine){
+      let messages = [{role:'system', content:'You are a helpful AI assistant capable of answering any question, generating code, providing information, and assisting with any topic. Be thorough, clear, and helpful.'}].concat(convo);
+      let reply = '';
+      let chunks = await engine.chat.completions.create({messages, stream:true, max_tokens:512});
+      removeTyping();
+      let row = document.createElement('div'); row.className='row ai';
+      let ico = document.createElement('div'); ico.className='r-ico'; ico.innerHTML = LOGO_SVG;
+      let bub = document.createElement('div'); bub.className='bub';
+      row.appendChild(ico); row.appendChild(bub); document.getElementById('msgs').appendChild(row);
+      for await(let chunk of chunks){
+        let delta = chunk.choices[0].delta.content || '';
+        reply += delta;
+        bub.innerHTML = fmt(reply);
+        scroll();
+      }
+      convo.push({role:'assistant', content:reply});
+    }
+    else throw new Error("AI not loaded");
+  } catch(err){
+    removeTyping();
+    showError(err.message);
+    convo.pop();
+  }
+  busy = false;
+  document.getElementById('send').disabled = false;
+  document.getElementById('ta').focus();
+}
+
+window.sendMsg = sendMsg;
+loadModel();
+</script>
+<script>
+  if (window.themeManager) window.themeManager.initTheme();
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'themeChange' && e.data.theme && window.themeManager) {
+      window.themeManager.applyTheme(e.data.theme);
+    }
+  });
+</script>
+</body>
+</html>

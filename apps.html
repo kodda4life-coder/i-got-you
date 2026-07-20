@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apps</title>
+<link rel="stylesheet" href="shared.css">
+<script src="theme.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body {
+  overflow: auto !important;
+  height: auto !important;
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+}
+body {
+  min-height: 100vh;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: rgba(0, 0, 0, 0.15) !important;
+  backdrop-filter: blur(12px) saturate(1.6) !important;
+  padding: 32px;
+}
+
+.dashboard-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Search Bar */
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 40px;
+  padding: 8px 20px;
+  max-width: 340px;
+  transition: all 0.2s ease;
+  margin-bottom: 24px;
+}
+.search-wrapper:focus-within {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.search-wrapper i {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  margin-right: 12px;
+}
+.search-wrapper input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  height: 32px;
+}
+.search-wrapper input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Tags */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.tag-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 30px;
+  padding: 6px 16px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tag-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* Divider & Header */
+.section-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 16px;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.section-header i {
+  color: #fff;
+  font-size: 20px;
+}
+.section-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+/* ── Compact App Grid ── */
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 12px;
+}
+.app-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: fadeIn 0.3s ease forwards;
+  opacity: 0;
+  transform: scale(0.95);
+  padding: 0;
+}
+@keyframes fadeIn {
+  to { opacity: 1; transform: scale(1); }
+}
+.app-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Just the Icon - centered */
+.app-icon {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  background: transparent;
+}
+.app-icon img {
+  width: 55%;
+  height: 55%;
+  object-fit: contain;
+  border-radius: 0;
+}
+.app-icon .fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--accent), #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  border-radius: 12px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  body { padding: 16px; }
+  .search-wrapper { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard-wrap">
+  <!-- Search Bar -->
+  <div class="search-wrapper">
+    <i class="fas fa-search"></i>
+    <input id="search" type="text" placeholder="Search apps..." oninput="filterApps(this.value)" autocomplete="off" />
+  </div>
+
+  <!-- Tags / Categories -->
+  <div class="tags-container">
+    <div class="tag-chip">Social</div>
+    <div class="tag-chip">Streaming</div>
+    <div class="tag-chip">Music</div>
+    <div class="tag-chip">Gaming</div>
+    <div class="tag-chip">Productivity</div>
+    <div class="tag-chip">Communication</div>
+    <div class="tag-chip">Development</div>
+  </div>
+
+  <div class="section-divider"></div>
+  <div class="section-header">
+    <i class="fas fa-thumbtack"></i>
+    <h2>Pinned Apps</h2>
+  </div>
+
+  <div class="app-grid" id="app-grid"></div>
+</div>
+
+<script>
+function getIconUrl(domain) { return `https://icon.horse/icon/${domain}`; }
+
+const apps = [
+  { name: "YouTube", url: "https://www.youtube.com", domain: "youtube.com" },
+  { name: "Discord", url: "https://discord.com", domain: "discord.com" },
+  { name: "Reddit", url: "https://www.reddit.com", domain: "reddit.com" },
+  { name: "Twitch", url: "https://www.twitch.tv", domain: "twitch.tv" },
+  { name: "Spotify", url: "https://open.spotify.com", domain: "spotify.com" },
+  { name: "Apple Music", url: "https://music.apple.com", domain: "music.apple.com" },
+  { name: "TikTok", url: "https://www.tiktok.com", domain: "tiktok.com" },
+  { name: "GitHub", url: "https://github.com", domain: "github.com" },
+  { name: "Crazy Games", url: "https://www.crazygames.com", domain: "crazygames.com" },
+  { name: "Poki Games", url: "https://poki.com", domain: "poki.com" },
+  { name: "Netflix", url: "https://www.netflix.com", domain: "netflix.com" },
+  { name: "Hulu", url: "https://www.hulu.com", domain: "hulu.com" },
+  { name: "Amazon", url: "https://www.amazon.com", domain: "amazon.com" },
+  { name: "Twitter", url: "https://twitter.com", domain: "twitter.com" },
+  { name: "Instagram", url: "https://www.instagram.com", domain: "instagram.com" },
+  { name: "Facebook", url: "https://www.facebook.com", domain: "facebook.com" },
+  { name: "WhatsApp", url: "https://web.whatsapp.com", domain: "whatsapp.com" },
+  { name: "Telegram", url: "https://web.telegram.org", domain: "telegram.org" },
+  { name: "Zoom", url: "https://zoom.us", domain: "zoom.us" },
+  { name: "Snapchat", url: "https://www.snapchat.com", domain: "snapchat.com" }
+];
+
+function openApp(url, name) { window.parent.postMessage({ type: 'navigate', url: url }, '*'); }
+
+function filterList(q) {
+  if (!q) return apps;
+  return apps.filter(a => a.name.toLowerCase().includes(q.toLowerCase()));
+}
+
+function renderApps(list) {
+  var grid = document.getElementById('app-grid');
+  grid.innerHTML = '';
+  if (!list.length) {
+    grid.innerHTML = '<div class="no-results">✨ No apps found. Try a different search.</div>';
+    return;
+  }
+  list.forEach(function(app, idx) {
+    var card = document.createElement('div');
+    card.className = 'app-card';
+    card.title = app.name;
+    card.style.animationDelay = (idx * 0.02) + 's';
+
+    var iconWrap = document.createElement('div');
+    iconWrap.className = 'app-icon';
+
+    var img = document.createElement('img');
+    img.src = getIconUrl(app.domain);
+    img.alt = app.name;
+    img.onerror = function() {
+      this.onerror = null;
+      this.style.display = 'none';
+      var fallback = document.createElement('div');
+      fallback.className = 'fallback';
+      fallback.textContent = app.name.charAt(0).toUpperCase();
+      iconWrap.appendChild(fallback);
+    };
+    iconWrap.appendChild(img);
+
+    card.appendChild(iconWrap);
+    card.onclick = function() { openApp(app.url, app.name); };
+    grid.appendChild(card);
+  });
+}
+
+function filterApps(q) { renderApps(filterList(q)); }
+renderApps(apps);
+
+if (window.themeManager) window.themeManager.initTheme();
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'themeChange' && e.data.theme && window.themeManager) {
+    window.themeManager.applyTheme(e.data.theme);
+  }
+});
+</script>
+</body>
+</html>
