@@ -494,7 +494,7 @@
         <div id="window-container"></div>
         <div id="dock">
             <button class="dock-btn search-btn" data-window="search"><img src="images/no background logo.png" alt="Search" /></button>
-            <button class="dock-btn resources-btn" data-window="resources" data-url="resources.html"><i class="fas fa-gamepad"></i></button>
+            <button class="dock-btn resources-btn" data-window="resources" data-url="games.html"><i class="fas fa-gamepad"></i></button>
             <button class="dock-btn study-tools-btn" data-window="study-tools" data-url="apps.html"><i class="fas fa-th"></i></button>
             <button class="dock-btn ai-btn" data-window="ai" data-url="ai.html"><i class="fas fa-robot"></i></button>
             <button class="dock-btn movies-btn" data-window="movies" data-url="https://aether.cx/"><i class="fas fa-film"></i></button>
@@ -544,7 +544,7 @@
                 document.title = title.trim();
                 localStorage.setItem('cloakTitle', title.trim());
             } else {
-                document.title = 'CloudV1';
+                document.title = 'Learning';
                 localStorage.removeItem('cloakTitle');
             }
             let link = document.querySelector('link[rel="icon"]');
@@ -630,7 +630,7 @@
             }, 900);
         }
 
-        const hasVisited = localStorage.getItem('cloudv1_visited');
+        const hasVisited = localStorage.getItem('learning_visited');
 
         if (hasVisited) {
             splashContainer.classList.add('hidden');
@@ -638,7 +638,7 @@
             document.getElementById('splash-content').innerHTML = '';
             var autoTimer = null;
         } else {
-            localStorage.setItem('cloudv1_visited', 'true');
+            localStorage.setItem('learning_visited', 'true');
             fetch('oakwood.html')
                 .then(res => {
                     if (!res.ok) throw new Error('Failed to load oakwood.html');
@@ -1114,7 +1114,7 @@
                     break;
                 case 'resources':
                     isIframe = true;
-                    content = url || 'resources.html';
+                    content = url || 'games.html';
                     icon = 'fas fa-gamepad';
                     title = 'Resources';
                     break;
@@ -1190,7 +1190,7 @@
             e.returnValue = '';
         });
 
-        console.log('✅ CloudV1 ready — clean dock, window titles show Resources & Study Tools');
+        console.log('✅ Learning ready!');
     </script>
 </body>
 </html>
